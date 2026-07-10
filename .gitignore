@@ -1,0 +1,11 @@
+outputs/
+*.pt
+__pycache__/
+*.pyc
+.venv/
+venv/
+.vscode/
+.idea/
+*.mp4
+*.jpg
+*.png
