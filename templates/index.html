@@ -1,0 +1,450 @@
+<!DOCTYPE html>
+<html lang="en">
+
+          <head>
+                    <meta charset="UTF-8">
+                    <meta name="viewport" content="width=device-width, initial-scale=1.0">
+                    <title>Detection Lab — Live Object Detection</title>
+                    <link rel="preconnect" href="https://fonts.googleapis.com">
+                    <link rel="preconnect" href="https://fonts.gstatic.com" crossorigin>
+                    <link href="https://fonts.googleapis.com/css2?family=Archivo:wght@500;700&family=IBM+Plex+Mono:wght@400;500&display=swap"
+                              rel="stylesheet">
+                    <style>
+                              :root {
+                                        --bg: #eef0ee;
+                                        --surface: #ffffff;
+                                        --line: #d8dbd7;
+                                        --ink: #171a17;
+                                        --ink-dim: #656b63;
+                                        --ink-faint: #9aa19b;
+                                        --chip-1: #e4572e;
+                                        --chip-2: #2e86ab;
+                                        --chip-3: #6a994e;
+                                        --chip-4: #d9a441;
+                                        --chip-5: #8858a5;
+                                        --font-display: 'Archivo', sans-serif;
+                                        --font-mono: 'IBM Plex Mono', monospace;
+                              }
+
+                              * {
+                                        box-sizing: border-box;
+                              }
+
+                              html,
+                              body {
+                                        margin: 0;
+                                        background: var(--bg);
+                                        color: var(--ink);
+                                        font-family: var(--font-mono);
+                              }
+
+                              body {
+                                        min-height: 100vh;
+                                        padding: 28px 24px 40px;
+                              }
+
+                              .wrap {
+                                        max-width: 1140px;
+                                        margin: 0 auto;
+                              }
+
+                              header {
+                                        display: flex;
+                                        justify-content: space-between;
+                                        align-items: flex-end;
+                                        flex-wrap: wrap;
+                                        gap: 12px 24px;
+                                        margin-bottom: 22px;
+                              }
+
+                              header h1 {
+                                        font-family: var(--font-display);
+                                        font-weight: 700;
+                                        font-size: 25px;
+                                        letter-spacing: -0.01em;
+                                        margin: 0 0 4px;
+                              }
+
+                              header p {
+                                        margin: 0;
+                                        font-size: 13px;
+                                        color: var(--ink-dim);
+                                        max-width: 48ch;
+                              }
+
+                              .stat-strip {
+                                        display: flex;
+                                        gap: 18px;
+                                        font-size: 13px;
+                              }
+
+                              .stat-strip .stat {
+                                        text-align: right;
+                              }
+
+                              .stat .num {
+                                        font-family: var(--font-display);
+                                        font-weight: 700;
+                                        font-size: 20px;
+                                        display: block;
+                              }
+
+                              .stat .lbl {
+                                        color: var(--ink-faint);
+                                        font-size: 11px;
+                              }
+
+                              main {
+                                        display: grid;
+                                        grid-template-columns: minmax(0, 1.7fr) minmax(270px, 1fr);
+                                        gap: 18px;
+                                        align-items: start;
+                              }
+
+                              .feed {
+                                        position: relative;
+                                        background: #0c0d0c;
+                                        border: 1px solid var(--line);
+                                        border-radius: 12px;
+                                        overflow: hidden;
+                                        aspect-ratio: 4 / 3;
+                              }
+
+                              .feed img {
+                                        width: 100%;
+                                        height: 100%;
+                                        object-fit: cover;
+                                        display: block;
+                              }
+
+                              .feed .rec-badge {
+                                        position: absolute;
+                                        top: 14px;
+                                        left: 14px;
+                                        display: none;
+                                        align-items: center;
+                                        gap: 6px;
+                                        background: rgba(0, 0, 0, 0.55);
+                                        color: #fff;
+                                        font-size: 11px;
+                                        padding: 5px 10px 5px 8px;
+                                        border-radius: 999px;
+                              }
+
+                              .feed .rec-badge.on {
+                                        display: inline-flex;
+                              }
+
+                              .rec-dot {
+                                        width: 7px;
+                                        height: 7px;
+                                        border-radius: 50%;
+                                        background: var(--chip-1);
+                                        animation: blink 1.4s ease-in-out infinite;
+                              }
+
+                              @keyframes blink {
+
+                                        0%,
+                                        100% {
+                                                  opacity: 1;
+                                        }
+
+                                        50% {
+                                                  opacity: 0.3;
+                                        }
+                              }
+
+                              .side {
+                                        display: flex;
+                                        flex-direction: column;
+                                        gap: 14px;
+                              }
+
+                              .panel {
+                                        background: var(--surface);
+                                        border: 1px solid var(--line);
+                                        border-radius: 8px;
+                                        padding: 16px;
+                              }
+
+                              .panel h2 {
+                                        font-family: var(--font-display);
+                                        font-size: 13px;
+                                        font-weight: 700;
+                                        margin: 0 0 12px;
+                              }
+
+                              .conf-row {
+                                        display: flex;
+                                        justify-content: space-between;
+                                        font-size: 12.5px;
+                                        margin-bottom: 8px;
+                                        color: var(--ink-dim);
+                              }
+
+                              .conf-row span.value {
+                                        color: var(--ink);
+                                        font-weight: 500;
+                              }
+
+                              input[type="range"] {
+                                        width: 100%;
+                                        accent-color: var(--chip-2);
+                              }
+
+                              .meta-row {
+                                        display: flex;
+                                        justify-content: space-between;
+                                        font-size: 12.5px;
+                                        padding: 8px 0;
+                                        border-bottom: 1px solid var(--line);
+                              }
+
+                              .meta-row:last-child {
+                                        border-bottom: none;
+                              }
+
+                              .meta-row .label {
+                                        color: var(--ink-dim);
+                              }
+
+                              .chips {
+                                        display: flex;
+                                        flex-wrap: wrap;
+                                        gap: 6px;
+                                        margin-top: 4px;
+                              }
+
+                              .chip {
+                                        font-size: 11.5px;
+                                        padding: 4px 9px;
+                                        border-radius: 5px;
+                                        color: #fff;
+                              }
+
+                              .chip:nth-child(5n+1) {
+                                        background: var(--chip-1);
+                              }
+
+                              .chip:nth-child(5n+2) {
+                                        background: var(--chip-2);
+                              }
+
+                              .chip:nth-child(5n+3) {
+                                        background: var(--chip-3);
+                              }
+
+                              .chip:nth-child(5n+4) {
+                                        background: var(--chip-4);
+                              }
+
+                              .chip:nth-child(5n+5) {
+                                        background: var(--chip-5);
+                              }
+
+                              .chips .empty {
+                                        color: var(--ink-faint);
+                                        background: none;
+                                        padding: 0;
+                              }
+
+                              .actions {
+                                        display: flex;
+                                        gap: 8px;
+                              }
+
+                              .action-btn {
+                                        flex: 1;
+                                        font-family: var(--font-mono);
+                                        font-size: 12.5px;
+                                        padding: 10px 8px;
+                                        border-radius: 6px;
+                                        border: 1px solid var(--line);
+                                        background: var(--bg);
+                                        color: var(--ink);
+                                        cursor: pointer;
+                                        transition: border-color 0.15s ease, background 0.15s ease;
+                              }
+
+                              .action-btn:hover {
+                                        border-color: var(--ink-faint);
+                              }
+
+                              .action-btn.recording {
+                                        background: var(--chip-1);
+                                        color: #fff;
+                                        border-color: var(--chip-1);
+                              }
+
+                              .note {
+                                        font-size: 12px;
+                                        line-height: 1.6;
+                                        color: var(--ink-dim);
+                              }
+
+                              .note strong {
+                                        color: var(--ink);
+                              }
+
+                              .toast {
+                                        margin-top: 8px;
+                                        font-size: 11.5px;
+                                        color: var(--ink-faint);
+                                        min-height: 14px;
+                              }
+
+                              @media (max-width: 760px) {
+                                        main {
+                                                  grid-template-columns: 1fr;
+                                        }
+
+                                        .stat-strip {
+                                                  display: none;
+                                        }
+                              }
+                    </style>
+          </head>
+
+          <body>
+                    <div class="wrap">
+                              <header>
+                                        <div>
+                                                  <h1>Detection Lab</h1>
+                                                  <p>Live object detection over a webcam feed, running {{ model_name }}.
+                                                  </p>
+                                        </div>
+                                        <div class="stat-strip">
+                                                  <div class="stat"><span class="num" id="fpsStat">0.0</span><span
+                                                                      class="lbl">fps</span></div>
+                                                  <div class="stat"><span class="num" id="countStat">0</span><span
+                                                                      class="lbl">objects</span></div>
+                                        </div>
+                              </header>
+
+                              <main>
+                                        <div class="feed">
+                                                  <img src="/video_feed" alt="Live object detection feed">
+                                                  <div class="rec-badge" id="recBadge"><span
+                                                                      class="rec-dot"></span>Recording</div>
+                                        </div>
+
+                                        <div class="side">
+                                                  <div class="panel">
+                                                            <h2>Confidence threshold</h2>
+                                                            <div class="conf-row">
+                                                                      <span>Minimum confidence</span>
+                                                                      <span class="value" id="confValue">0.40</span>
+                                                            </div>
+                                                            <input type="range" id="confSlider" min="0.05" max="0.95"
+                                                                      step="0.05" value="0.4">
+                                                  </div>
+
+                                                  <div class="panel">
+                                                            <h2>Session</h2>
+                                                            <div class="meta-row"><span
+                                                                                class="label">Model</span><span>{{ model_name }}</span>
+                                                            </div>
+                                                            <div class="meta-row"><span class="label">Detected
+                                                                                now</span><span id="countMeta">0</span>
+                                                            </div>
+                                                            <div class="meta-row">
+                                                                      <span class="label">Classes present</span>
+                                                            </div>
+                                                            <div class="chips" id="classChips"><span
+                                                                                class="empty">Nothing detected
+                                                                                yet</span></div>
+                                                  </div>
+
+                                                  <div class="panel">
+                                                            <h2>Capture</h2>
+                                                            <div class="actions">
+                                                                      <button class="action-btn" id="snapshotBtn">Save
+                                                                                snapshot</button>
+                                                                      <button class="action-btn" id="recordBtn">Start
+                                                                                recording</button>
+                                                            </div>
+                                                            <div class="toast" id="toast"></div>
+                                                  </div>
+
+                                                  <div class="panel">
+                                                            <p class="note"><strong>Uncommon objects.</strong>
+                                                                      {{ model_name }} recognizes the standard COCO
+                                                                      classes. For an object it doesn't know, point
+                                                                      <code>YOLO_MODEL</code> at a fine-tuned checkpoint
+                                                                      once a labeled dataset is ready — no other code
+                                                                      changes needed.</p>
+                                                  </div>
+                                        </div>
+                              </main>
+                    </div>
+
+                    <script>
+                              const confSlider = document.getElementById('confSlider');
+                              const confValue = document.getElementById('confValue');
+                              const toast = document.getElementById('toast');
+                              const recordBtn = document.getElementById('recordBtn');
+                              const recBadge = document.getElementById('recBadge');
+                              let isRecording = false;
+
+                              function showToast(msg) {
+                                        toast.textContent = msg;
+                                        setTimeout(() => { if (toast.textContent === msg) toast.textContent = ''; }, 3000);
+                              }
+
+                              confSlider.addEventListener('input', () => {
+                                        confValue.textContent = parseFloat(confSlider.value).toFixed(2);
+                              });
+
+                              confSlider.addEventListener('change', () => {
+                                        fetch('/set_conf', {
+                                                  method: 'POST',
+                                                  headers: { 'Content-Type': 'application/json' },
+                                                  body: JSON.stringify({ conf: parseFloat(confSlider.value) })
+                                        });
+                              });
+
+                              document.getElementById('snapshotBtn').addEventListener('click', () => {
+                                        fetch('/snapshot', { method: 'POST' })
+                                                  .then(res => res.json())
+                                                  .then(data => showToast(data.status === 'success' ? 'Snapshot saved' : 'Could not save snapshot'))
+                                                  .catch(() => showToast('Could not save snapshot'));
+                              });
+
+                              recordBtn.addEventListener('click', () => {
+                                        const endpoint = isRecording ? '/record/stop' : '/record/start';
+                                        fetch(endpoint, { method: 'POST' })
+                                                  .then(res => res.json())
+                                                  .then(data => {
+                                                            if (data.status !== 'success') { showToast(data.message || 'Action failed'); return; }
+                                                            isRecording = !isRecording;
+                                                            recordBtn.textContent = isRecording ? 'Stop recording' : 'Start recording';
+                                                            recordBtn.classList.toggle('recording', isRecording);
+                                                            recBadge.classList.toggle('on', isRecording);
+                                                  });
+                              });
+
+                              function poll() {
+                                        fetch('/stats')
+                                                  .then(res => res.json())
+                                                  .then(data => {
+                                                            document.getElementById('fpsStat').textContent = data.fps.toFixed(1);
+                                                            document.getElementById('countStat').textContent = data.object_count;
+                                                            document.getElementById('countMeta').textContent = data.object_count;
+
+                                                            const chipsEl = document.getElementById('classChips');
+                                                            if (data.classes_present.length === 0) {
+                                                                      chipsEl.innerHTML = '<span class="empty">Nothing detected yet</span>';
+                                                            } else {
+                                                                      chipsEl.innerHTML = data.classes_present.map(c => `<span class="chip">${c}</span>`).join('');
+                                                            }
+                                                  })
+                                                  .catch(() => { });
+                              }
+
+                              poll();
+                              setInterval(poll, 1000);
+                    </script>
+          </body>
+
+</html>
